@@ -683,7 +683,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
             ### (4) Filtering out SNPs which have extreme allele frequency(The reference panel for association test.) ( *.{bed,bim,fam} )
             # QC: Maximum per-SNP missing > 0.5, MAF > 0.1%
             command = ' '.join(
-                [plink, "--bfile", OUTPUT + '.MERGED.FOUNDERS', "--reference-allele", TMP_allele_order, "--exclude",
+                [plink, "--bfile", OUTPUT + '.MERGED.FOUNDERS', "--a1-allele", TMP_allele_order, "--exclude",
                  TMP_all_remove_snps, "--geno 0.5", "--make-bed", "--out", OUTPUT])
             # print(command)
             os.system(command)
@@ -726,88 +726,88 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
 
 
 
-        if PREPARE:
-
-            print("[{}] Preparing files for Beagle.".format(index))
-
-            """
-            [Source from Buhm Han.]
-    
-            awk '{print $2 " " $4 " " $5 " " $6}' $OUTPUT.bim > $OUTPUT.markers
-            plink --bfile $OUTPUT --keep-allele-order --recode --alleleACGT --out $OUTPUT
-            awk '{print "M " $2}' $OUTPUT.map > $OUTPUT.dat
-            cut -d ' ' -f1-5,7- $OUTPUT.ped > $OUTPUT.nopheno.ped
-    
-            echo "[$i] Converting to beagle format.";  @ i++
-            linkage2beagle pedigree=$OUTPUT.nopheno.ped data=$OUTPUT.dat beagle=$OUTPUT.bgl standard=true > $OUTPUT.bgl.log
-    
-    
-            [Source from Yang.]
-    
-            awk '{print $2 " " $4 " " $5 " " $6}' $OUTPUT.bim > $OUTPUT.markers
-            plink --bfile $OUTPUT --keep-allele-order --recode --alleleACGT --out $OUTPUT
-            plink --bfile $OUTPUT --recode --transpose --out $OUTPUT
-            # awk '{print "M " $2}' $OUTPUT.map > $OUTPUT.dat
-            # cut -d ' ' -f1-5,7- $OUTPUT.ped > $OUTPUT.nopheno.ped
-    
-            echo "[$i] Converting to beagle format.";  @ i++
-            beagle2vcf -fnmarker $OUTPUT.markers -fnfam $OUTPUT.fam -fngtype $OUTPUT.tped -fnout $OUTPUT.vcf
-    
-            I will make this code block based on source given by Yang. for now.
-    
-            """
-
-
-            command = ' '.join(
-                ["awk", '\'{print $2 " " $4 " " $5 " " $6}\'', OUTPUT + '.bim', ">", OUTPUT + '.markers'])
-            print(command)
-            os.system(command)
-
-            command = ' '.join(
-                [plink, "--bfile", OUTPUT, "--keep-allele-order", "--recode", "--alleleACGT", "--out", OUTPUT])
-            print(command)
-            os.system(command)
-
-            command = ' '.join(["awk", '\'{print "M " $2}\'', OUTPUT + '.map', ">", OUTPUT + '.dat'])
-            print(command)
-            os.system(command)
-
-            command = ' '.join(["cut -d ' ' -f1-5,7-", OUTPUT + '.ped', ">", OUTPUT + '.nopheno.ped'])
-            print(command)
-            os.system(command)
-
-            index += 1
-
-            print("[{}] Converting to beagle format.".format(index))
-
-            command = ' '.join([linkage2beagle, "pedigree=" + OUTPUT + '.nopheno.ped', "data=" + OUTPUT + '.dat',
-                                "beagle=" + OUTPUT + '.bgl', "standard=true", ">", OUTPUT + '.bgl.log'])
-            print(command)
-            os.system(command)
-
-            index += 1
-
-
-        if PHASE:
-
-            print("[{}] Phasing reference using Beagle (see progress in $OUTPUT.bgl.log).".format(index))
-
-            # Put this part postponed. (2017.11.29. by B. Han.)
-            # Anyway introduced phasing by beagle. (2018. 7. 16.)
-
-            '''
-            beagle unphased=$OUTPUT.bgl nsamples=4 niterations=10 missing=0 verbose=true maxwindow=1000 log=$OUTPUT.phasing >> $OUTPUT.bgl.log
-    
-            '''
-
-            command = ' '.join([beagle, "unphased=" + OUTPUT + '.bgl',
-                                "nsamples=4 niterations=10 missing=0 verbose=true maxwindow=1000",
-                                "log=" + OUTPUT + '.phasing', ">>", OUTPUT + '.bgl.log'])
-            print(command)
-            os.system(command)
-
-
-            index += 1
+        # if PREPARE:
+        #
+        #     print("[{}] Preparing files for Beagle.".format(index))
+        #
+        #     """
+        #     [Source from Buhm Han.]
+        #
+        #     awk '{print $2 " " $4 " " $5 " " $6}' $OUTPUT.bim > $OUTPUT.markers
+        #     plink --bfile $OUTPUT --keep-allele-order --recode --alleleACGT --out $OUTPUT
+        #     awk '{print "M " $2}' $OUTPUT.map > $OUTPUT.dat
+        #     cut -d ' ' -f1-5,7- $OUTPUT.ped > $OUTPUT.nopheno.ped
+        #
+        #     echo "[$i] Converting to beagle format.";  @ i++
+        #     linkage2beagle pedigree=$OUTPUT.nopheno.ped data=$OUTPUT.dat beagle=$OUTPUT.bgl standard=true > $OUTPUT.bgl.log
+        #
+        #
+        #     [Source from Yang.]
+        #
+        #     awk '{print $2 " " $4 " " $5 " " $6}' $OUTPUT.bim > $OUTPUT.markers
+        #     plink --bfile $OUTPUT --keep-allele-order --recode --alleleACGT --out $OUTPUT
+        #     plink --bfile $OUTPUT --recode --transpose --out $OUTPUT
+        #     # awk '{print "M " $2}' $OUTPUT.map > $OUTPUT.dat
+        #     # cut -d ' ' -f1-5,7- $OUTPUT.ped > $OUTPUT.nopheno.ped
+        #
+        #     echo "[$i] Converting to beagle format.";  @ i++
+        #     beagle2vcf -fnmarker $OUTPUT.markers -fnfam $OUTPUT.fam -fngtype $OUTPUT.tped -fnout $OUTPUT.vcf
+        #
+        #     I will make this code block based on source given by Yang. for now.
+        #
+        #     """
+        #
+        #
+        #     command = ' '.join(
+        #         ["awk", '\'{print $2 " " $4 " " $5 " " $6}\'', OUTPUT + '.bim', ">", OUTPUT + '.markers'])
+        #     print(command)
+        #     os.system(command)
+        #
+        #     command = ' '.join(
+        #         [plink, "--bfile", OUTPUT, "--keep-allele-order", "--recode", "--alleleACGT", "--out", OUTPUT])
+        #     print(command)
+        #     os.system(command)
+        #
+        #     command = ' '.join(["awk", '\'{print "M " $2}\'', OUTPUT + '.map', ">", OUTPUT + '.dat'])
+        #     print(command)
+        #     os.system(command)
+        #
+        #     command = ' '.join(["cut -d ' ' -f1-5,7-", OUTPUT + '.ped', ">", OUTPUT + '.nopheno.ped'])
+        #     print(command)
+        #     os.system(command)
+        #
+        #     index += 1
+        #
+        #     print("[{}] Converting to beagle format.".format(index))
+        #
+        #     command = ' '.join([linkage2beagle, "pedigree=" + OUTPUT + '.nopheno.ped', "data=" + OUTPUT + '.dat',
+        #                         "beagle=" + OUTPUT + '.bgl', "standard=true", ">", OUTPUT + '.bgl.log'])
+        #     print(command)
+        #     os.system(command)
+        #
+        #     index += 1
+        #
+        #
+        # if PHASE:
+        #
+        #     print("[{}] Phasing reference using Beagle (see progress in $OUTPUT.bgl.log).".format(index))
+        #
+        #     # Put this part postponed. (2017.11.29. by B. Han.)
+        #     # Anyway introduced phasing by beagle. (2018. 7. 16.)
+        #
+        #     '''
+        #     beagle unphased=$OUTPUT.bgl nsamples=4 niterations=10 missing=0 verbose=true maxwindow=1000 log=$OUTPUT.phasing >> $OUTPUT.bgl.log
+        #
+        #     '''
+        #
+        #     command = ' '.join([beagle, "unphased=" + OUTPUT + '.bgl',
+        #                         "nsamples=4 niterations=10 missing=0 verbose=true maxwindow=1000",
+        #                         "log=" + OUTPUT + '.phasing', ">>", OUTPUT + '.bgl.log'])
+        #     print(command)
+        #     os.system(command)
+        #
+        #
+        #     index += 1
 
 
 
@@ -972,7 +972,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
             os.system(command)
 
             command = ' '.join(
-                [plink, "--make-bed", "--bfile", __MERGED__, "--reference-allele", TMP_allele_order,
+                [plink, "--make-bed", "--bfile", __MERGED__, "--a1-allele", TMP_allele_order,
                  "--out", OUTPUT]) # (2019. 01. 10.) Final output as just output prefix(`OUTPUT`)
             # print(command)
             os.system(command)
