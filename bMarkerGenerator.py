@@ -89,7 +89,7 @@ std_WARNING_MAIN_PROCESS_NAME = "\n[%s::WARNING]: " % (os.path.basename(__file__
 
 # @HATK_b_MarkerGenerator
 def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _variants=None,
-                     _p_src=None, _p_dependency=None, __save_intermediates=False):
+                     _p_src="src/", _p_dependency="dependency/", __save_intermediates=False):
 
 
     ########## < Core Variables > ##########
@@ -97,7 +97,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
     ### Major Path Variables
 
     # [1] src (with "_p_src")
-    p_src_b_MarkerGenerator = "src/b_MarkerGenerator" if not bool(_p_src) else _p_src
+    p_src = _p_src
     p_dependency = "dependency" if not bool(_p_dependency) else _p_dependency
 
 
@@ -168,23 +168,23 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
 
     # New version with Python.
 
-    if not os.path.exists(os.path.join(p_src_b_MarkerGenerator, "HLAtoSequences.py")):
-        print(std_MAIN_PROCESS_NAME + "Error. 'HLAtoSequences.py' not found in '{0}'".format(p_src_b_MarkerGenerator))
+    if not os.path.exists(os.path.join(p_src, "HLAtoSequences.py")):
+        print(std_MAIN_PROCESS_NAME + "Error. 'HLAtoSequences.py' not found in '{0}'".format(p_src))
         sys.exit()
     else:
-        from src.b_MarkerGenerator.HLAtoSequences import HLAtoSequences
+        from src.HLAtoSequences import HLAtoSequences
 
-    if not os.path.exists(os.path.join(p_src_b_MarkerGenerator, "encodeVariants.py")):
-        print(std_MAIN_PROCESS_NAME + "Error. 'encodeVariants.py' not found in '{0}'".format(p_src_b_MarkerGenerator))
+    if not os.path.exists(os.path.join(p_src, "encodeVariants.py")):
+        print(std_MAIN_PROCESS_NAME + "Error. 'encodeVariants.py' not found in '{0}'".format(p_src))
         sys.exit()
     else:
-        from src.b_MarkerGenerator.encodeVariants import encodeVariants
+        from src.encodeVariants import encodeVariants
 
-    if not os.path.exists(os.path.join(p_src_b_MarkerGenerator, "encodeHLA.py")):
-        print(std_MAIN_PROCESS_NAME + "Error. 'encodeHLA.py' not found in '{0}'".format(p_src_b_MarkerGenerator))
+    if not os.path.exists(os.path.join(p_src, "encodeHLA.py")):
+        print(std_MAIN_PROCESS_NAME + "Error. 'encodeHLA.py' not found in '{0}'".format(p_src))
         sys.exit()
     else:
-        from src.b_MarkerGenerator.encodeHLA import encodeHLA
+        from src.encodeHLA import encodeHLA
 
 
 
@@ -553,12 +553,12 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
             """
 
 
-            # os.system("rm " + (SNP_DATA2 + ".FOUNDERS.{bed,bim,fam,log,nosex}"))
-            # os.system("rm " + (SNP_DATA2 + ".FOUNDERS.hardy.*"))
-            # os.system("rm " + (SNP_DATA2 + ".FOUNDERS.freq.*"))
-            # os.system("rm " + (SNP_DATA2 + ".FOUNDERS.missing.*"))
-            # os.system("rm " + os.path.join(INTERMEDIATE_PATH, "remove.snps.*"))
-            # os.system("rm " + os.path.join(INTERMEDIATE_PATH, "all.remove.snps"))
+            os.system("rm " + (SNP_DATA2 + ".FOUNDERS.{bed,bim,fam,log,nosex}"))
+            os.system("rm " + (SNP_DATA2 + ".FOUNDERS.hardy.*"))
+            os.system("rm " + (SNP_DATA2 + ".FOUNDERS.freq.*"))
+            os.system("rm " + (SNP_DATA2 + ".FOUNDERS.missing.*"))
+            os.system("rm " + os.path.join(INTERMEDIATE_PATH, "remove.snps.*"))
+            os.system("rm " + os.path.join(INTERMEDIATE_PATH, "all.remove.snps"))
 
 
             index += 1
@@ -621,11 +621,11 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
             
             """
 
-            # os.system("rm " + (OUTPUT + ".HLA.*"))
-            # os.system("rm " + (OUTPUT + ".AA.*"))
-            # os.system("rm " + (OUTPUT + ".SNPS.*"))
-            # os.system("rm " + (SNP_DATA2 + ".FOUNDERS.QC.*"))
-            # os.system("rm " + TMP_merged_list)
+            os.system("rm " + (OUTPUT + ".HLA.*"))
+            os.system("rm " + (OUTPUT + ".AA.*"))
+            os.system("rm " + (OUTPUT + ".SNPS.*"))
+            os.system("rm " + (SNP_DATA2 + ".FOUNDERS.QC.*"))
+            os.system("rm " + TMP_merged_list)
 
 
 
@@ -717,8 +717,8 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
                 
             """
 
-            # os.system("rm " + (OUTPUT + ".MERGED.FOUNDERS.*"))
-            # os.system("rm " + TMP_all_remove_snps)
+            os.system("rm " + (OUTPUT + ".MERGED.FOUNDERS.*"))
+            os.system("rm " + TMP_all_remove_snps)
 
 
 
@@ -1110,17 +1110,17 @@ if __name__ == "__main__":
                                      description=textwrap.dedent('''\
     #################################################################################################
 
-        b_MarkerGenerator.py
+        bMarkerGenerator.py
         
-        Generating markers based on HLA sequence information dictionary(generated by "MakeDictionary").
+        Generating markers based on HLA sequence information dictionary(generated by "IMGT2Seq").
 
         (ex.)
-        : python3 b_MarkerGenerator.py  
-            -chped ./data/b_MarkerGenerator.py/HAPMAP_CEU_HLA.4field.ped 
-            -hg 18 
-            -o ./Trial_HAPMAP_CEU
-            -dict-AA ./data/b_MarkerGenerator.py/HLA_DICTIONARY_AA.hg18.imgt370
-            -dict-SNPS ./data/b_MarkerGenerator.py/HLA_DICTIONARY_SNPS.hg18.imgt370 
+        : python3 bMarkerGenerator.py 
+            --chped  
+            --hg  
+            -o 
+            --dict-AA 
+            --dict-SNPS  
 
         HLA PED file should contain HLA alleles in the following (alphabetical) order:
         HLA-A, B, C, DPA1, DPB1, DQA1, DQB1, DRB1
@@ -1134,13 +1134,15 @@ if __name__ == "__main__":
 
     parser.add_argument("-h", "--help", help="\nShow this help message and exit\n\n", action='help')
 
-    parser.add_argument("-variants", help="\nInput variants data file(.bed/.bim/.fam)\n\n")
-    parser.add_argument("-chped", help="\nHLA Type Data(.chped)\n\n", required=True)
+    parser.add_argument("--variants", help="\nInput variants data file(.bed/.bim/.fam)\n\n")
+    parser.add_argument("--chped", help="\nHLA Type Data(.chped)\n\n", required=True)
     parser.add_argument("-hg", help="\nHuman Genome version(ex. 18, 19)\n\n", choices=["18", "19", "38"], metavar="hg", default="19")
-    parser.add_argument("-o", help="\nOutput file prefix\n\n", required=True)
+    parser.add_argument("--out", "-o", help="\nOutput file prefix\n\n", required=True)
 
-    parser.add_argument("-dict-AA", help="\nPrefix of AA HLA Dictionary file(*.txt, *.map).\n\n")
-    parser.add_argument("-dict-SNPS", help="\nPrefix of SNP HLA Dictionary file(*.txt, *.map).\n\n")
+    parser.add_argument("--dict-AA", help="\nPrefix of AA HLA Dictionary file(*.txt, *.map).\n\n", required=True)
+    parser.add_argument("--dict-SNPS", help="\nPrefix of SNP HLA Dictionary file(*.txt, *.map).\n\n", required=True)
+
+    parser.add_argument("--save-intermediates", help="\nDon't remove intermediate files.\n\n", action='store_true')
 
 
 
@@ -1162,5 +1164,6 @@ if __name__ == "__main__":
 
 
     # Implementing Main Function.
-    bMarkerGenerator(_CHPED=args.chped, _OUT=args.o, _hg=args.hg, _dictionary_AA=args.dict_AA,
-                     _dictionary_SNPS=args.dict_SNPS)
+    bMarkerGenerator(_CHPED=args.chped, _OUT=args.out, _hg=args.hg, _variants=args.variants,
+                     _dictionary_AA=args.dict_AA, _dictionary_SNPS=args.dict_SNPS,
+                     __save_intermediates=args.save_intermediates)
