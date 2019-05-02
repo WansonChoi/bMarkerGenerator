@@ -932,7 +932,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
                 os.system("rm " + __AA__+".{bed,bim,fam,log}")
                 os.system("rm " + __SNPS__+".{bed,bim,fam,log}")
                 os.system("rm " + __HLA__+".{bed,bim,fam,log}")
-                os.system(TMP_merged_list)
+                os.system("rm " + TMP_merged_list)
 
 
             index += 1
