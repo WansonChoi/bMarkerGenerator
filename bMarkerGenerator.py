@@ -658,155 +658,158 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
 
 
 
-        if PREPARE:
+        if f_phasing:
+    
 
-            print("[{}] Preparing files for Beagle.".format(index))
+            if PREPARE:
 
-            """
-            [Source from Buhm Han.]
+                print("[{}] Preparing files for Beagle.".format(index))
 
-            awk '{print $2 " " $4 " " $5 " " $6}' $OUTPUT.bim > $OUTPUT.markers
-            plink --bfile $OUTPUT --keep-allele-order --recode --alleleACGT --out $OUTPUT
-            awk '{print "M " $2}' $OUTPUT.map > $OUTPUT.dat
-            cut -d ' ' -f1-5,7- $OUTPUT.ped > $OUTPUT.nopheno.ped
+                """
+                [Source from Buhm Han.]
+    
+                awk '{print $2 " " $4 " " $5 " " $6}' $OUTPUT.bim > $OUTPUT.markers
+                plink --bfile $OUTPUT --keep-allele-order --recode --alleleACGT --out $OUTPUT
+                awk '{print "M " $2}' $OUTPUT.map > $OUTPUT.dat
+                cut -d ' ' -f1-5,7- $OUTPUT.ped > $OUTPUT.nopheno.ped
+    
+                echo "[$i] Converting to beagle format.";  @ i++
+                linkage2beagle pedigree=$OUTPUT.nopheno.ped data=$OUTPUT.dat beagle=$OUTPUT.bgl standard=true > $OUTPUT.bgl.log
+    
+    
+                [Source from Yang.]
+    
+                awk '{print $2 " " $4 " " $5 " " $6}' $OUTPUT.bim > $OUTPUT.markers
+                plink --bfile $OUTPUT --keep-allele-order --recode --alleleACGT --out $OUTPUT
+                plink --bfile $OUTPUT --recode --transpose --out $OUTPUT
+                # awk '{print "M " $2}' $OUTPUT.map > $OUTPUT.dat
+                # cut -d ' ' -f1-5,7- $OUTPUT.ped > $OUTPUT.nopheno.ped
+    
+                echo "[$i] Converting to beagle format.";  @ i++
+                beagle2vcf -fnmarker $OUTPUT.markers -fnfam $OUTPUT.fam -fngtype $OUTPUT.tped -fnout $OUTPUT.vcf
+    
+                I will make this code block based on source given by Yang. for now.
+    
+                """
 
-            echo "[$i] Converting to beagle format.";  @ i++
-            linkage2beagle pedigree=$OUTPUT.nopheno.ped data=$OUTPUT.dat beagle=$OUTPUT.bgl standard=true > $OUTPUT.bgl.log
-
-
-            [Source from Yang.]
-
-            awk '{print $2 " " $4 " " $5 " " $6}' $OUTPUT.bim > $OUTPUT.markers
-            plink --bfile $OUTPUT --keep-allele-order --recode --alleleACGT --out $OUTPUT
-            plink --bfile $OUTPUT --recode --transpose --out $OUTPUT
-            # awk '{print "M " $2}' $OUTPUT.map > $OUTPUT.dat
-            # cut -d ' ' -f1-5,7- $OUTPUT.ped > $OUTPUT.nopheno.ped
-
-            echo "[$i] Converting to beagle format.";  @ i++
-            beagle2vcf -fnmarker $OUTPUT.markers -fnfam $OUTPUT.fam -fngtype $OUTPUT.tped -fnout $OUTPUT.vcf
-
-            I will make this code block based on source given by Yang. for now.
-
-            """
-
-            # ATtrick : 'P' to 'T', 'A' to 'A'
-            [bim_ATtrick, a1_allele_ATtrick] = ATtrick(OUTPUT + '.bim', OUTPUT)
-
-
-            # command = ' '.join(["awk", '\'{print $2" "$4" "$5" "$6}\'', OUTPUT + '.bim', ">", OUTPUT + '.markers'])
-            command = ' '.join(["awk", '\'{print $2" "$4" "$6" "$5}\'', bim_ATtrick, ">", OUTPUT + '.ATtrick.markers'])
-            # print(command)
-            os.system(command)
-            """
-            Plink works by setting ALT allele as a1-allele, which is the 5th column of bim file.
-            However, VCF file sets a2-allele, which is the 6th column of plink bim file, as ALT allele.
-            
-            beagle2vcf converts 4th column of *.markers file to ALT allele of newly generated vcf file.
-            That's why I reordered ($5, $6) to ($6, $5).
-            """
-
-            # Manipulate duplicated Base poistion
-            redefined_markers = redefineBP(OUTPUT + '.ATtrick.markers', OUTPUT + '.bglv4.markers')
-
-            # Applying the above manipulated base position information.
-            # command = [
-            #     "paste <(cut -f1-3 %s) <(awk '{print $2}' %s) <(cut -f5- %s) > %s" % (bim_ATtrick, redefined_markers, bim_ATtrick, OUTPUT+'.ATtrick.redefined.bim')
-            # ]
-            # print(command)
-            # # os.system(command)
-            # subprocess.call(command)
-
-            command = ' '.join(
-                [plink, "--bed", OUTPUT+'.bed', "--bim", bim_ATtrick, "--fam", OUTPUT+'.fam',
-                 "--keep-allele-order", "--recode", "--alleleACGT", "--out", OUTPUT+'.ATtrick',
-                 "--a1-allele", a1_allele_ATtrick])
-            # print(command)
-            os.system(command)
-
-            command = ' '.join(["awk", '\'{print "M " $2}\'', OUTPUT + '.ATtrick.map', ">", OUTPUT + '.ATtrick.dat'])
-            # print(command)
-            os.system(command)
-
-            command = ' '.join(["cut -d ' ' -f1-5,7-", OUTPUT + '.ATtrick.ped', ">", OUTPUT + '.ATtrick.nopheno.ped'])
-            # print(command)
-            os.system(command)
-
-            index += 1
-
-            print("[{}] Converting PLINK to BEAGLE format.".format(index))
-
-            command = ' '.join([linkage2beagle, "pedigree=" + OUTPUT + '.ATtrick.nopheno.ped', "data=" + OUTPUT + '.ATtrick.dat',
-                                "beagle=" + OUTPUT + '.ATtrick.bgl', "standard=true", ">", OUTPUT + '.ATtrick.bgl.log'])
-            # print(command)
-            os.system(command)
-
-            index += 1
-
-            # for Beagle 4.1
-            print("[{}] Converting BEAGLE to VCF format.".format(index))
-
-            command = ' '.join([beagle2vcf, '6', redefined_markers, OUTPUT + '.ATtrick.bgl', '0', '>', OUTPUT+'.bglv4.bgl.vcf'])
-            # print(command)
-            os.system(command)
-
-            index += 1
+                # ATtrick : 'P' to 'T', 'A' to 'A'
+                [bim_ATtrick, a1_allele_ATtrick] = ATtrick(OUTPUT + '.bim', OUTPUT)
 
 
-            if not f_save_intermediates:
-                # os.system("rm {}".format())
-                os.system("rm {}".format(OUTPUT + '.ATtrick.bgl.log'))
-                os.system("rm {}".format(OUTPUT + '.ATtrick.bgl'))
-                os.system("rm {}".format(OUTPUT + '.ATtrick.log'))
-                os.system("rm {}".format(OUTPUT + '.ATtrick.dat'))
-                os.system("rm {}".format(OUTPUT + '.ATtrick.nopheno.ped'))
-                os.system("rm {}".format(OUTPUT + '.ATtrick.map'))
-                os.system("rm {}".format(OUTPUT + '.ATtrick.ped'))
-                os.system("rm {}".format(OUTPUT + '.ATtrick.markers'))
-                os.system("rm {}".format(bim_ATtrick))
-                os.system("rm {}".format(a1_allele_ATtrick))
+                # command = ' '.join(["awk", '\'{print $2" "$4" "$5" "$6}\'', OUTPUT + '.bim', ">", OUTPUT + '.markers'])
+                command = ' '.join(["awk", '\'{print $2" "$4" "$6" "$5}\'', bim_ATtrick, ">", OUTPUT + '.ATtrick.markers'])
+                # print(command)
+                os.system(command)
+                """
+                Plink works by setting ALT allele as a1-allele, which is the 5th column of bim file.
+                However, VCF file sets a2-allele, which is the 6th column of plink bim file, as ALT allele.
+                
+                beagle2vcf converts 4th column of *.markers file to ALT allele of newly generated vcf file.
+                That's why I reordered ($5, $6) to ($6, $5).
+                """
+
+                # Manipulate duplicated Base poistion
+                redefined_markers = redefineBP(OUTPUT + '.ATtrick.markers', OUTPUT + '.bglv4.markers')
+
+                # Applying the above manipulated base position information.
+                # command = [
+                #     "paste <(cut -f1-3 %s) <(awk '{print $2}' %s) <(cut -f5- %s) > %s" % (bim_ATtrick, redefined_markers, bim_ATtrick, OUTPUT+'.ATtrick.redefined.bim')
+                # ]
+                # print(command)
+                # # os.system(command)
+                # subprocess.call(command)
+
+                command = ' '.join(
+                    [plink, "--bed", OUTPUT+'.bed', "--bim", bim_ATtrick, "--fam", OUTPUT+'.fam',
+                     "--keep-allele-order", "--recode", "--alleleACGT", "--out", OUTPUT+'.ATtrick',
+                     "--a1-allele", a1_allele_ATtrick])
+                # print(command)
+                os.system(command)
+
+                command = ' '.join(["awk", '\'{print "M " $2}\'', OUTPUT + '.ATtrick.map', ">", OUTPUT + '.ATtrick.dat'])
+                # print(command)
+                os.system(command)
+
+                command = ' '.join(["cut -d ' ' -f1-5,7-", OUTPUT + '.ATtrick.ped', ">", OUTPUT + '.ATtrick.nopheno.ped'])
+                # print(command)
+                os.system(command)
+
+                index += 1
+
+                print("[{}] Converting PLINK to BEAGLE format.".format(index))
+
+                command = ' '.join([linkage2beagle, "pedigree=" + OUTPUT + '.ATtrick.nopheno.ped', "data=" + OUTPUT + '.ATtrick.dat',
+                                    "beagle=" + OUTPUT + '.ATtrick.bgl', "standard=true", ">", OUTPUT + '.ATtrick.bgl.log'])
+                # print(command)
+                os.system(command)
+
+                index += 1
+
+                # for Beagle 4.1
+                print("[{}] Converting BEAGLE to VCF format.".format(index))
+
+                command = ' '.join([beagle2vcf, '6', redefined_markers, OUTPUT + '.ATtrick.bgl', '0', '>', OUTPUT+'.bglv4.bgl.vcf'])
+                # print(command)
+                os.system(command)
+
+                index += 1
 
 
-
-        if PHASE:
-
-            print("[{}] Phasing reference using Beagle4.1.".format(index))
-
-            '''
-            # Beagle v3.x.x
-            beagle unphased=$OUTPUT.bgl nsamples=4 niterations=10 missing=0 verbose=true maxwindow=1000 log=$OUTPUT.phasing >> $OUTPUT.bgl.log
-
-            # Beagle v4.1
-            beagle gt=OUTPUT+'.ATtrick.redefined.vcf' out=OUTPUT+'.ATtrick.redefined.phased' nthreads=1 impute=false niterations=10 lowmem=true >> $OUTPUT.bgl.log
-
-            '''
-
-            # command = ' '.join([beagle, "gt={}".format(OUTPUT+'.bglv4.bgl.vcf'),
-            #                     "nthreads=1", "impute=false",
-            #                     "niterations=10", "lowmem=true", "out={}".format(OUTPUT+'.bglv4.bgl.phased'),
-            #                     '>', OUTPUT+'.bglv4.bgl.phased.vcf.log'])
-
-            command = ' '.join([beagle, "gt={}".format(OUTPUT+'.bglv4.bgl.vcf'),
-                                "nthreads=1", "impute=false",
-                                "niterations=10", "lowmem=true", "out={}".format(OUTPUT+'.bglv4.bgl.phased')])
-            print(command)
-
-            try:
-                # os.system(command)
-                f_log = open(OUTPUT+'.bglv4.bgl.phased.vcf.log', 'w')
-                subprocess.run(re.split(r'\s+',command), check=True, stdout=f_log, stderr=f_log)
-
-            except subprocess.CalledProcessError:
-                print(std_ERROR_MAIN_PROCESS_NAME + "Phasing failed.")
-                sys.exit()
-            else:
-                f_log.close()
                 if not f_save_intermediates:
                     # os.system("rm {}".format())
-                    os.system("rm {}".format(OUTPUT + '.bglv4.bgl.vcf'))
+                    os.system("rm {}".format(OUTPUT + '.ATtrick.bgl.log'))
+                    os.system("rm {}".format(OUTPUT + '.ATtrick.bgl'))
+                    os.system("rm {}".format(OUTPUT + '.ATtrick.log'))
+                    os.system("rm {}".format(OUTPUT + '.ATtrick.dat'))
+                    os.system("rm {}".format(OUTPUT + '.ATtrick.nopheno.ped'))
+                    os.system("rm {}".format(OUTPUT + '.ATtrick.map'))
+                    os.system("rm {}".format(OUTPUT + '.ATtrick.ped'))
+                    os.system("rm {}".format(OUTPUT + '.ATtrick.markers'))
+                    os.system("rm {}".format(bim_ATtrick))
+                    os.system("rm {}".format(a1_allele_ATtrick))
 
-            os.system("rm {}".format(OUTPUT+'.bglv4.bgl.phased.log'))
 
-            index += 1
+
+            if PHASE:
+
+                print("[{}] Phasing reference using Beagle4.1.".format(index))
+
+                '''
+                # Beagle v3.x.x
+                beagle unphased=$OUTPUT.bgl nsamples=4 niterations=10 missing=0 verbose=true maxwindow=1000 log=$OUTPUT.phasing >> $OUTPUT.bgl.log
+    
+                # Beagle v4.1
+                beagle gt=OUTPUT+'.ATtrick.redefined.vcf' out=OUTPUT+'.ATtrick.redefined.phased' nthreads=1 impute=false niterations=10 lowmem=true >> $OUTPUT.bgl.log
+    
+                '''
+
+                # command = ' '.join([beagle, "gt={}".format(OUTPUT+'.bglv4.bgl.vcf'),
+                #                     "nthreads=1", "impute=false",
+                #                     "niterations=10", "lowmem=true", "out={}".format(OUTPUT+'.bglv4.bgl.phased'),
+                #                     '>', OUTPUT+'.bglv4.bgl.phased.vcf.log'])
+
+                command = ' '.join([beagle, "gt={}".format(OUTPUT+'.bglv4.bgl.vcf'),
+                                    "nthreads=1", "impute=false",
+                                    "niterations=10", "lowmem=true", "out={}".format(OUTPUT+'.bglv4.bgl.phased')])
+                print(command)
+
+                try:
+                    # os.system(command)
+                    f_log = open(OUTPUT+'.bglv4.bgl.phased.vcf.log', 'w')
+                    subprocess.run(re.split(r'\s+',command), check=True, stdout=f_log, stderr=f_log)
+
+                except subprocess.CalledProcessError:
+                    print(std_ERROR_MAIN_PROCESS_NAME + "Phasing failed.")
+                    sys.exit()
+                else:
+                    f_log.close()
+                    if not f_save_intermediates:
+                        # os.system("rm {}".format())
+                        os.system("rm {}".format(OUTPUT + '.bglv4.bgl.vcf'))
+
+                os.system("rm {}".format(OUTPUT+'.bglv4.bgl.phased.log'))
+
+                index += 1
 
 
 
