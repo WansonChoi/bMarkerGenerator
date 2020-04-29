@@ -231,10 +231,12 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
 
         if not f_save_intermediates:
 
-            os.system("rm " + (OUTPUT + ".AA.{ped,map}"))
+            os.system("rm " + (OUTPUT + ".AA.ped"))
+            os.system("rm " + (OUTPUT + ".AA.map"))
             os.system("rm " + (OUTPUT + ".AA.TMP.*"))
             os.system("rm " + os.path.join(INTERMEDIATE_PATH, "to_remove"))
-            os.system("rm " + OUTPUT + ".AA.CODED.{ped,map}")
+            os.system("rm " + OUTPUT + ".AA.CODED.ped")
+            os.system("rm " + OUTPUT + ".AA.CODED.map")
             os.system("rm " + OUTPUT + ".AA.CODED.factors")
 
 
@@ -267,7 +269,8 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
         """
 
         if not f_save_intermediates:
-            os.system("rm " + (OUTPUT + ".HLA.{ped,map}"))
+            os.system("rm " + (OUTPUT + ".HLA.ped"))
+            os.system("rm " + (OUTPUT + ".HLA.map"))
 
 
 
@@ -339,10 +342,12 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
 
         if not f_save_intermediates:
 
-            os.system("rm " + (OUTPUT + ".SNPS.{ped,map}"))
+            os.system("rm " + (OUTPUT + ".SNPS.ped"))
+            os.system("rm " + (OUTPUT + ".SNPS.map"))
             os.system("rm " + (OUTPUT + ".SNPS.TMP.*"))
             os.system("rm " + os.path.join(INTERMEDIATE_PATH, "to_remove"))
-            os.system("rm " + (OUTPUT + ".SNPS.CODED.{ped,map}"))
+            os.system("rm " + (OUTPUT + ".SNPS.CODED.ped"))
+            os.system("rm " + (OUTPUT + ".SNPS.CODED.map"))
             os.system("rm " + (OUTPUT + ".SNPS.CODED.factors"))
 
 
@@ -460,7 +465,12 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
             """
 
 
-            os.system("rm " + (SNP_DATA2 + ".FOUNDERS.{bed,bim,fam,log,nosex}"))
+            os.system("rm " + (SNP_DATA2 + ".FOUNDERS.bed"))
+            os.system("rm " + (SNP_DATA2 + ".FOUNDERS.bim"))
+            os.system("rm " + (SNP_DATA2 + ".FOUNDERS.fam"))
+            os.system("rm " + (SNP_DATA2 + ".FOUNDERS.log"))
+            if os.path.exists(SNP_DATA2 + ".FOUNDERS.nosex"):
+                os.system("rm " + (SNP_DATA2 + ".FOUNDERS.nosex"))
             os.system("rm " + (SNP_DATA2 + ".FOUNDERS.hardy.*"))
             os.system("rm " + (SNP_DATA2 + ".FOUNDERS.freq.*"))
             os.system("rm " + (SNP_DATA2 + ".FOUNDERS.missing.*"))
@@ -598,7 +608,8 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
 
             ### (5) Allele frequency info. of output reference panel ( *.FRQ )
             # Calculate allele frequencies
-            command = ' '.join([plink, "--bfile", OUTPUT, "--keep-allele-order", "--freq", "--out", OUTPUT + '.FRQ'])
+            command = ' '.join([plink, "--bfile", OUTPUT, "--keep-allele-order", "--freq", "--out", OUTPUT + '.FRQ',
+                                "--a1-allele", TMP_allele_order])
             # print(command)
             os.system(command)
 
@@ -626,6 +637,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
 
             os.system("rm " + (OUTPUT + ".MERGED.FOUNDERS.*"))
             os.system("rm " + TMP_all_remove_snps)
+            os.system("rm " + TMP_allele_order)
 
 
 
@@ -784,9 +796,18 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
 
             if not f_save_intermediates:
 
-                os.system("rm " + OUTPUT+".HLA.{bed,bim,fam,log}")
-                os.system("rm " + OUTPUT+".SNPS.CODED.{bed,bim,fam,log}")
-                os.system("rm " + OUTPUT+".AA.CODED.{bed,bim,fam,log}")
+                os.system("rm " + OUTPUT+".HLA.bed")
+                os.system("rm " + OUTPUT+".HLA.bim")
+                os.system("rm " + OUTPUT+".HLA.fam")
+                os.system("rm " + OUTPUT+".HLA.log")
+                os.system("rm " + OUTPUT+".SNPS.CODED.bed")
+                os.system("rm " + OUTPUT+".SNPS.CODED.bim")
+                os.system("rm " + OUTPUT+".SNPS.CODED.fam")
+                os.system("rm " + OUTPUT+".SNPS.CODED.log")
+                os.system("rm " + OUTPUT+".AA.CODED.bed")
+                os.system("rm " + OUTPUT+".AA.CODED.bim")
+                os.system("rm " + OUTPUT+".AA.CODED.fam")
+                os.system("rm " + OUTPUT+".AA.CODED.log")
 
 
 
@@ -836,9 +857,18 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
 
             if not f_save_intermediates:
 
-                os.system("rm " + __AA__+".{bed,bim,fam,log}")
-                os.system("rm " + __SNPS__+".{bed,bim,fam,log}")
-                os.system("rm " + __HLA__+".{bed,bim,fam,log}")
+                os.system("rm " + __AA__+".bed")
+                os.system("rm " + __AA__+".bim")
+                os.system("rm " + __AA__+".fam")
+                os.system("rm " + __AA__+".log")
+                os.system("rm " + __SNPS__+".bed")
+                os.system("rm " + __SNPS__+".bim")
+                os.system("rm " + __SNPS__+".fam")
+                os.system("rm " + __SNPS__+".log")
+                os.system("rm " + __HLA__+".bed")
+                os.system("rm " + __HLA__+".bim")
+                os.system("rm " + __HLA__+".fam")
+                os.system("rm " + __HLA__+".log")
                 os.system("rm " + TMP_merged_list)
 
 
@@ -886,7 +916,11 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
 
 
             if not f_save_intermediates:
-                os.system("rm " + __MERGED__+".{bed,bim,fam,log,refallele}")
+                os.system("rm " + __MERGED__+".bed")
+                os.system("rm " + __MERGED__+".bim")
+                os.system("rm " + __MERGED__+".fam")
+                os.system("rm " + __MERGED__+".log")
+                os.system("rm " + __MERGED__+".refallele")
 
 
             index += 1
