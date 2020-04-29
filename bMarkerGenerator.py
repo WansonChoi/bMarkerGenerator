@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os, sys, re
+import subprocess
 import argparse, textwrap
 
 from src.HLAtoSequences import HLAtoSequences
@@ -34,6 +35,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
     _p_plink = os.path.join(p_dependency, "plink")
     _p_beagle = os.path.join(p_dependency, "beagle.jar")
     _p_linkage2beagle = os.path.join(p_dependency, "linkage2beagle.jar")
+    _p_beagle2vcf = os.path.join(p_dependency, "beagle2vcf.jar")
 
     if not os.path.exists(_p_plink):
         print(std_ERROR_MAIN_PROCESS_NAME + "Please Prepare 'PLINK' (http://pngu.mgh.harvard.edu/~purcell/plink/download.shtml) in '{0}'\n".format(_p_dependency))
@@ -45,6 +47,10 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
 
     if not os.path.exists(_p_linkage2beagle):
         print(std_ERROR_MAIN_PROCESS_NAME + "Please Prepare 'linkage2beagle.jar' (http://faculty.washington.edu/browning/beagle_utilities/utilities.html) (beagle.3.0.4/utility/linkage2beagle.jar) in '{0}'\n".format(_p_dependency))
+        sys.exit()
+
+    if not os.path.exists(_p_beagle2vcf):
+        print(std_ERROR_MAIN_PROCESS_NAME + "Please Prepare 'beagle2vcf.jar' (http://faculty.washington.edu/browning/beagle_utilities/utilities.html) (beagle.3.0.4/utility/linkage2beagle.jar) in '{0}'\n".format(_p_dependency))
         sys.exit()
 
 
@@ -117,6 +123,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
     plink = ' '.join([_p_plink, "--noweb", "--silent"])
     beagle = ' '.join(["java", "-Xmx{}".format(_mem), "-jar", _p_beagle])
     linkage2beagle = ' '.join(["java", "-Xmx{}".format(_mem), "-jar", _p_linkage2beagle])
+    beagle2vcf = ' '.join(["java", "-Xmx{}".format(_mem), "-jar", _p_beagle2vcf])
 
 
 
@@ -132,7 +139,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
     QC = 1
 
     PREPARE = 1
-    PHASE = 0
+    PHASE = 1
     CLEANUP = 0
 
     # (2019. 01. 10.) Last three code blocks won't be implemented
@@ -699,7 +706,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
             """
 
             # Manipulate duplicated Base poistion
-            redefined_markers = redefineBP(OUTPUT + '.ATtrick.markers', OUTPUT + '.ATtrick.redefined.markers')
+            redefined_markers = redefineBP(OUTPUT + '.ATtrick.markers', OUTPUT + '.bglv4.markers')
 
             # Applying the above manipulated base position information.
             # command = [
@@ -726,37 +733,80 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
 
             index += 1
 
-            print("[{}] Converting to beagle format.".format(index))
+            print("[{}] Converting PLINK to BEAGLE format.".format(index))
 
             command = ' '.join([linkage2beagle, "pedigree=" + OUTPUT + '.ATtrick.nopheno.ped', "data=" + OUTPUT + '.ATtrick.dat',
                                 "beagle=" + OUTPUT + '.ATtrick.bgl', "standard=true", ">", OUTPUT + '.ATtrick.bgl.log'])
-            print(command)
+            # print(command)
+            os.system(command)
+
+            index += 1
+
+            # for Beagle 4.1
+            print("[{}] Converting BEAGLE to VCF format.".format(index))
+
+            command = ' '.join([beagle2vcf, '6', redefined_markers, OUTPUT + '.ATtrick.bgl', '0', '>', OUTPUT+'.bglv4.bgl.vcf'])
+            # print(command)
             os.system(command)
 
             index += 1
 
 
+            if not f_save_intermediates:
+                # os.system("rm {}".format())
+                os.system("rm {}".format(OUTPUT + '.ATtrick.bgl.log'))
+                os.system("rm {}".format(OUTPUT + '.ATtrick.bgl'))
+                os.system("rm {}".format(OUTPUT + '.ATtrick.log'))
+                os.system("rm {}".format(OUTPUT + '.ATtrick.dat'))
+                os.system("rm {}".format(OUTPUT + '.ATtrick.nopheno.ped'))
+                os.system("rm {}".format(OUTPUT + '.ATtrick.map'))
+                os.system("rm {}".format(OUTPUT + '.ATtrick.ped'))
+                os.system("rm {}".format(OUTPUT + '.ATtrick.markers'))
+                os.system("rm {}".format(bim_ATtrick))
+                os.system("rm {}".format(a1_allele_ATtrick))
 
-        # if PHASE:
-        #
-        #     print("[{}] Phasing reference using Beagle (see progress in $OUTPUT.bgl.log).".format(index))
-        #
-        #     # Put this part postponed. (2017.11.29. by B. Han.)
-        #     # Anyway introduced phasing by beagle. (2018. 7. 16.)
-        #
-        #     '''
-        #     beagle unphased=$OUTPUT.bgl nsamples=4 niterations=10 missing=0 verbose=true maxwindow=1000 log=$OUTPUT.phasing >> $OUTPUT.bgl.log
-        #
-        #     '''
-        #
-        #     command = ' '.join([beagle, "unphased=" + OUTPUT + '.bgl',
-        #                         "nsamples=4 niterations=10 missing=0 verbose=true maxwindow=1000",
-        #                         "log=" + OUTPUT + '.phasing', ">>", OUTPUT + '.bgl.log'])
-        #     print(command)
-        #     os.system(command)
-        #
-        #
-        #     index += 1
+
+
+        if PHASE:
+
+            print("[{}] Phasing reference using Beagle4.1.".format(index))
+
+            '''
+            # Beagle v3.x.x
+            beagle unphased=$OUTPUT.bgl nsamples=4 niterations=10 missing=0 verbose=true maxwindow=1000 log=$OUTPUT.phasing >> $OUTPUT.bgl.log
+
+            # Beagle v4.1
+            beagle gt=OUTPUT+'.ATtrick.redefined.vcf' out=OUTPUT+'.ATtrick.redefined.phased' nthreads=1 impute=false niterations=10 lowmem=true >> $OUTPUT.bgl.log
+
+            '''
+
+            # command = ' '.join([beagle, "gt={}".format(OUTPUT+'.bglv4.bgl.vcf'),
+            #                     "nthreads=1", "impute=false",
+            #                     "niterations=10", "lowmem=true", "out={}".format(OUTPUT+'.bglv4.bgl.phased'),
+            #                     '>', OUTPUT+'.bglv4.bgl.phased.vcf.log'])
+
+            command = ' '.join([beagle, "gt={}".format(OUTPUT+'.bglv4.bgl.vcf'),
+                                "nthreads=1", "impute=false",
+                                "niterations=10", "lowmem=true", "out={}".format(OUTPUT+'.bglv4.bgl.phased')])
+            print(command)
+
+            try:
+                # os.system(command)
+                f_log = open(OUTPUT+'.bglv4.bgl.phased.vcf.log', 'w')
+                subprocess.run(re.split(r'\s+',command), check=True, stdout=f_log, stderr=f_log)
+
+            except subprocess.CalledProcessError:
+                print(std_ERROR_MAIN_PROCESS_NAME + "Phasing failed.")
+                sys.exit()
+            else:
+                f_log.close()
+                if not f_save_intermediates:
+                    # os.system("rm {}".format())
+                    os.system("rm {}".format(OUTPUT + '.bglv4.bgl.vcf'))
+
+            os.system("rm {}".format(OUTPUT+'.bglv4.bgl.phased.log'))
+
+            index += 1
 
 
 
