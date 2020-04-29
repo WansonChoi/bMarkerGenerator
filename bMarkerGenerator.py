@@ -636,10 +636,15 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
             """
 
             os.system("rm " + (OUTPUT + ".MERGED.FOUNDERS.*"))
+            os.system("rm " + (OUTPUT + ".FRQ.log"))
+            os.system("rm " + (OUTPUT + ".log"))
             os.system("rm " + TMP_all_remove_snps)
             os.system("rm " + TMP_allele_order)
 
-
+            if os.path.exists(OUTPUT + ".FRQ.nosex"):
+                os.system("rm " + (OUTPUT + ".FRQ.nosex"))
+            if os.path.exists(OUTPUT + ".nosex"):
+                os.system("rm " + (OUTPUT + ".nosex"))
 
             index += 1
 
@@ -800,14 +805,23 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
                 os.system("rm " + OUTPUT+".HLA.bim")
                 os.system("rm " + OUTPUT+".HLA.fam")
                 os.system("rm " + OUTPUT+".HLA.log")
+
                 os.system("rm " + OUTPUT+".SNPS.CODED.bed")
                 os.system("rm " + OUTPUT+".SNPS.CODED.bim")
                 os.system("rm " + OUTPUT+".SNPS.CODED.fam")
                 os.system("rm " + OUTPUT+".SNPS.CODED.log")
+
                 os.system("rm " + OUTPUT+".AA.CODED.bed")
                 os.system("rm " + OUTPUT+".AA.CODED.bim")
                 os.system("rm " + OUTPUT+".AA.CODED.fam")
                 os.system("rm " + OUTPUT+".AA.CODED.log")
+
+                if os.path.exists(__HLA__+".nosex"):
+                    os.system("rm " + __HLA__ + ".nosex")
+                if os.path.exists(__SNPS__+".nosex"):
+                    os.system("rm " + __SNPS__ + ".nosex")
+                if os.path.exists(__AA__+".nosex"):
+                    os.system("rm " + __AA__ + ".nosex")
 
 
 
@@ -861,16 +875,25 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
                 os.system("rm " + __AA__+".bim")
                 os.system("rm " + __AA__+".fam")
                 os.system("rm " + __AA__+".log")
+
                 os.system("rm " + __SNPS__+".bed")
                 os.system("rm " + __SNPS__+".bim")
                 os.system("rm " + __SNPS__+".fam")
                 os.system("rm " + __SNPS__+".log")
+
                 os.system("rm " + __HLA__+".bed")
                 os.system("rm " + __HLA__+".bim")
                 os.system("rm " + __HLA__+".fam")
                 os.system("rm " + __HLA__+".log")
+
                 os.system("rm " + TMP_merged_list)
 
+                if os.path.exists(__HLA__+".nosex"):
+                    os.system("rm " + __HLA__ + ".nosex")
+                if os.path.exists(__SNPS__+".nosex"):
+                    os.system("rm " + __SNPS__ + ".nosex")
+                if os.path.exists(__AA__+".nosex"):
+                    os.system("rm " + __AA__ + ".nosex")
 
             index += 1
 
@@ -892,6 +915,10 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
             rm $OUTPUT.*.FOUNDERS.???
             rm allele.order
             rm all.remove.snps
+            
+            
+            # 2020. 04. 29.
+            This part is quite different from the one of HATK.
             
             """
 
