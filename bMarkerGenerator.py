@@ -19,7 +19,7 @@ std_WARNING_MAIN_PROCESS_NAME = "\n[%s::WARNING]: " % (os.path.basename(__file__
 
 
 def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _variants=None, _mem='2g',
-                     _p_dependency="dependency/", f_save_intermediates=False, f_phasing=False):
+                     _p_dependency="dependency/", f_save_intermediates=False, f_phasing=False, _nthreads=-1):
 
 
     ########## < Core Variables > ##########
@@ -789,7 +789,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
                 #                     '>', OUTPUT+'.bglv4.bgl.phased.vcf.log'])
 
                 command = ' '.join([beagle, "gt={}".format(OUTPUT+'.bglv4.bgl.vcf'),
-                                    "nthreads=1", "impute=false",
+                                    "impute=false", (("nthreads={}".format(_nthreads)) if _nthreads > 0 else ""),
                                     "niterations=10", "lowmem=true", "out={}".format(OUTPUT+'.bglv4.bgl.phased')])
                 print(command)
 
@@ -1189,9 +1189,12 @@ if __name__ == "__main__":
     parser.add_argument("--dict-SNPS", help="\nPrefix of SNP HLA Dictionary file(*.txt, *.map).\n\n", required=True)
 
     parser.add_argument("--save-intermediates", help="\nDon't remove intermediate files.\n\n", action='store_true')
+    parser.add_argument("--dependency", help="\nSpecify a folder for external software.\n\n", default='dependency/')
+
+    # Beagle4.1
     parser.add_argument("--phasing", help="\nPerform phasing with Beagle4.1.\n\n", action='store_true')
     parser.add_argument("--mem", help="\nJava Memory requried for Bealge4.1. (ex. 2g)\n\n", default="2g")
-    parser.add_argument("--dependency", help="\nSpecify a folder for external software.\n\n", default='dependency/')
+    parser.add_argument("--nthreads", help="\nThe number of threads to use in Bealge4.1. (ex. 2)\n\n", default=-1, type=int)
 
 
 
@@ -1215,4 +1218,4 @@ if __name__ == "__main__":
     # Implementing Main Function.
     bMarkerGenerator(_CHPED=args.chped, _OUT=args.out, _hg=args.hg, _dictionary_AA=args.dict_AA,
                      _dictionary_SNPS=args.dict_SNPS, _variants=args.variants, _mem=args.mem,
-                     f_save_intermediates=args.save_intermediates, f_phasing=args.phasing)
+                     f_save_intermediates=args.save_intermediates, f_phasing=args.phasing, _nthreads=args.nthreads)
