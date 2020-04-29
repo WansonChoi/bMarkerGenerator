@@ -19,7 +19,7 @@ std_WARNING_MAIN_PROCESS_NAME = "\n[%s::WARNING]: " % (os.path.basename(__file__
 
 
 def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _variants=None, _mem='2g',
-                     _p_dependency="dependency/", f_save_intermediates=False, f_phasing=False, _nthreads=-1):
+                     _p_dependency="dependency/", f_save_intermediates=False, f_phasing=False, _nthreads=1):
 
 
     ########## < Core Variables > ##########
@@ -121,7 +121,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
     SNPS_CODED = OUTPUT + '.SNPS.CODED'
 
     plink = ' '.join([_p_plink, "--noweb", "--silent"])
-    beagle = ' '.join(["java", "-Xmx{}".format(_mem), "-jar", _p_beagle])
+    beagle = ' '.join(["java", "-Xmx{}".format(_mem), "-Xss{}".format(_mem), "-jar", _p_beagle])
     linkage2beagle = ' '.join(["java", "-Xmx{}".format(_mem), "-jar", _p_linkage2beagle])
     beagle2vcf = ' '.join(["java", "-Xmx{}".format(_mem), "-jar", _p_beagle2vcf])
 
@@ -789,8 +789,8 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
                 #                     '>', OUTPUT+'.bglv4.bgl.phased.vcf.log'])
 
                 command = ' '.join([beagle, "gt={}".format(OUTPUT+'.bglv4.bgl.vcf'),
-                                    "impute=false", (("nthreads={}".format(_nthreads)) if _nthreads > 0 else ""),
-                                    "niterations=10", "lowmem=true", "out={}".format(OUTPUT+'.bglv4.bgl.phased')])
+                                    "impute=false", "nthreads={}".format(_nthreads),
+                                    "niterations=5", "lowmem=true", "out={}".format(OUTPUT+'.bglv4.bgl.phased')])
                 print(command)
 
                 try:
@@ -1194,7 +1194,7 @@ if __name__ == "__main__":
     # Beagle4.1
     parser.add_argument("--phasing", help="\nPerform phasing with Beagle4.1.\n\n", action='store_true')
     parser.add_argument("--mem", help="\nJava Memory requried for Bealge4.1. (ex. 2g)\n\n", default="2g")
-    parser.add_argument("--nthreads", help="\nThe number of threads to use in Bealge4.1. (ex. 2)\n\n", default=-1, type=int)
+    parser.add_argument("--nthreads", help="\nThe number of threads to use in Bealge4.1. (ex. 2)\n\n", default=1, type=int)
 
 
 
