@@ -2,7 +2,11 @@
 
 import os, sys, re
 import argparse, textwrap
-# from platform import platform
+
+from src.HLAtoSequences import HLAtoSequences
+from src.encodeVariants import encodeVariants
+from src.encodeHLA import encodeHLA
+
 
 
 ########## < Core Global Variables > ##########
@@ -12,109 +16,73 @@ std_ERROR_MAIN_PROCESS_NAME = "\n[%s::ERROR]: " % (os.path.basename(__file__))
 std_WARNING_MAIN_PROCESS_NAME = "\n[%s::WARNING]: " % (os.path.basename(__file__))
 
 
-# def HATK_b_MarkerGenerator(_b_MarkerGenerator):
-#
-#     def wrapper_function(*args, **kwargs):
-#
-#         if __name__ == "__main__":
-#
-#             # ##### Additional Argument processing
-#             #
-#             # t_dict_AA = ""
-#             # t_dict_SNPS = ""
-#             #
-#             # if (args.dict_AA != "Not_given" and args.dict_SNPS != "Not_given"):
-#             #
-#             #     # When all HLA DICTIONARY information is given properly,
-#             #
-#             #     t_dict_AA = args.dict_AA
-#             #     t_dict_SNPS = args.dict_SNPS
-#             #
-#             #
-#             # elif (args.dict_AA == "Not_given" and args.dict_SNPS == "Not_given"):
-#             #
-#             #     # No values are given to HLA DICTIONARY related options.
-#             #
-#             #     # Abort
-#             #     print("\n[Error]: None of HLA DICTIONARY files are given. Please check them all again.")
-#             #     print('{"-dict-AA", "-dict-SNPS"}\n')
-#             #     sys.exit()
-#             #
-#             #
-#             #
-#             # else:
-#             #     # Abort
-#             #     print("\n[Error]: Not all of HLA DICTIONARY files are given. Please check them all again.")
-#             #     print('{"-dict-AA", "-dict-SNPS"}\n')
-#             #     sys.exit()
-#             pass
-#
-#         else:
-#
-#             print(args)
-#             print(kwargs)
-#
-#             _CHPED = args[0]
-#             _OUT = args[1]
-#             _HG = args[2]
-#             _dict_AA = args[3]
-#             _dict_SNPS = args[4]
-#             _variants = kwargs["_variants"]
-#
-#
-#             if not bool(_CHPED):
-#                 print(std_ERROR_MAIN_PROCESS_NAME + 'The argument "{0}" has not given. Please check it again.\n'.format("-hped"))
-#                 sys.exit()
-#             else:
-#                 # Checking whether it went through "NomenCleaner.py".
-#                 if not _CHPED.endswith(".chped"):
-#                     print(std_ERROR_MAIN_PROCESS_NAME + 'Given ped file should be processed by "NomenCleaner.py"\n')
-#                     sys.exit()
-#
-#
-#             if not bool(_HG):
-#                 print(std_ERROR_MAIN_PROCESS_NAME + 'The argument "{0}" has not given. Please check it again.\n'.format("-hg"))
-#                 sys.exit()
-#
-#
-#             if not (bool(_dict_AA) and bool(_dict_SNPS)):
-#                 print(std_ERROR_MAIN_PROCESS_NAME + 'One of "-dict-AA" or "-dict-SNPS" options(or Both) are not given. Please check them again.\n')
-#                 sys.exit()
-#
-#         return _b_MarkerGenerator(*args, **kwargs)
-#
-#     return wrapper_function
-
-
-
-# @HATK_b_MarkerGenerator
-def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _variants=None,
-                     _p_src="src/", _p_dependency="dependency/", __save_intermediates=False):
+def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _variants=None, _mem='2g',
+                     _p_dependency="dependency/", f_save_intermediates=False, f_phasing=False):
 
 
     ########## < Core Variables > ##########
 
-    ### Major Path Variables
+    ### [1] Major Path Variables
+    if os.path.exists(_p_dependency):
+        p_dependency = _p_dependency
+    else:
+        print(std_ERROR_MAIN_PROCESS_NAME + "Folder for dependent software('{}') can't be found. Please check '--dependency' argument again.".format(_p_dependency))
+        sys.exit()
 
-    # [1] src (with "_p_src")
-    p_src = _p_src
-    p_dependency = "dependency" if not bool(_p_dependency) else _p_dependency
-
-
-    # [2] dependency (with "_p_dependency")
+    # dependent software.
     _p_plink = os.path.join(p_dependency, "plink")
-    # _p_plink = os.path.join(p_dependency, "plink_mac" if not bool(re.search(pattern="Linux", string=platform())) else "plink_linux")
     _p_beagle = os.path.join(p_dependency, "beagle.jar")
     _p_linkage2beagle = os.path.join(p_dependency, "linkage2beagle.jar")
 
+    if not os.path.exists(_p_plink):
+        print(std_ERROR_MAIN_PROCESS_NAME + "Please Prepare 'PLINK' (http://pngu.mgh.harvard.edu/~purcell/plink/download.shtml) in '{0}'\n".format(_p_dependency))
+        sys.exit()
 
-    ### Dictionary Files
+    if not os.path.exists(_p_beagle):
+        print(std_ERROR_MAIN_PROCESS_NAME + "Please Prepare 'Beagle 4.1' (https://faculty.washington.edu/browning/beagle/b4_1.html#download) in '{0}'\n".format(_p_dependency))
+        sys.exit()
+
+    if not os.path.exists(_p_linkage2beagle):
+        print(std_ERROR_MAIN_PROCESS_NAME + "Please Prepare 'linkage2beagle.jar' (http://faculty.washington.edu/browning/beagle_utilities/utilities.html) (beagle.3.0.4/utility/linkage2beagle.jar) in '{0}'\n".format(_p_dependency))
+        sys.exit()
+
+
+
+    ### [2] Memory representation check.
+    p_Mb = re.compile(r'\d+m')
+    p_Gb = re.compile(r'\d+[gG]')
+
+    if not (bool(p_Mb.match(_mem)) or bool(p_Gb.match(_mem))):
+        print(std_ERROR_MAIN_PROCESS_NAME + "Given Java memory value('{}') has bizzare representation. Please check '--mem' argument again.".format(_mem))
+        sys.exit()
+
+
+
+    ### [3] Dictionary Files
 
     _dictionary_AA_seq = _dictionary_AA + ".txt" # From now on, official extension of HLA sequence information dictionary is ".txt". (2018. 9. 25.)
     _dictionary_AA_map = _dictionary_AA + ".map"
 
     _dictionary_SNPS_seq = _dictionary_SNPS + ".txt"
     _dictionary_SNPS_map = _dictionary_SNPS + ".map"
+
+
+    if not os.path.exists(_dictionary_AA_map):
+        print(std_ERROR_MAIN_PROCESS_NAME + "AA dictionary map file can't be found('{0}'). Please check '--dict-AA' argument again.\n".format(_dictionary_AA_map))
+        sys.exit()
+
+    if not os.path.exists(_dictionary_AA_seq):
+        print(std_ERROR_MAIN_PROCESS_NAME + "AA dictionary seq file can't be found('{0}'). Please check '--dict-AA' argument again.\n".format(_dictionary_AA_seq))
+        sys.exit()
+
+    if not os.path.exists(_dictionary_SNPS_map):
+        print(std_ERROR_MAIN_PROCESS_NAME + "SNPS dictionary map file can't be found('{0}'). Please check '--dict-SNPS' argument again.\n".format(_dictionary_SNPS_map))
+        sys.exit()
+
+    if not os.path.exists(_dictionary_SNPS_seq):
+        print(std_ERROR_MAIN_PROCESS_NAME + "SNPS dictionary seq file can't be found('{0}'). Please check '--dict-SNPS' argument again.\n".format(_dictionary_SNPS_seq))
+        sys.exit()
+
 
 
     ### Intermediate path.
@@ -124,72 +92,11 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
         os.makedirs(INTERMEDIATE_PATH, exist_ok=True)
 
 
-    ### Flag for plain SNP markers.
-    f_plain_SNP = bool(_variants)
-
-
-    ########## < Checking Dependencies > ##########
-
-    ### Other Software.
-
-    if not os.path.exists(_p_plink):
-        print(std_MAIN_PROCESS_NAME + "Please Prepare 'PLINK' (http://pngu.mgh.harvard.edu/~purcell/plink/download.shtml) in '{0}'\n".format(os.path.dirname(_p_plink)))
-        sys.exit()
-
-    if not os.path.exists(_p_beagle):
-        print(std_MAIN_PROCESS_NAME + "Please Prepare 'Beagle 3' (http://faculty.washington.edu/browning/beagle/beagle.html#download) in '{0}'\n".format(os.path.dirname(_p_beagle)))
-        sys.exit()
-
-    if not os.path.exists(_p_linkage2beagle):
-        print(std_MAIN_PROCESS_NAME + "Please Prepare 'linkage2beagle.jar' (http://faculty.washington.edu/browning/beagle_utilities/utilities.html) (beagle.3.0.4/utility/linkage2beagle.jar) in '{0}'\n".format(os.path.dirname(_p_linkage2beagle)))
-        sys.exit()
-
-
-    ### Dictionary Information for HLA sequence
-
-    if not os.path.exists(_dictionary_AA_map):
-        print(std_MAIN_PROCESS_NAME + "Please Prepare 'HLA_DICTIONARY_AA.map' (included with this package) in '{0}'\n".format(os.path.dirname(_dictionary_AA_map)))
-        sys.exit()
-
-    if not os.path.exists(_dictionary_AA_seq):
-        print(std_MAIN_PROCESS_NAME + "Please Prepare 'HLA_DICTIONARY_AA.txt' (included with this package) in '{0}'\n".format(os.path.dirname(_dictionary_AA_seq)))
-        sys.exit()
-
-    if not os.path.exists(_dictionary_SNPS_map):
-        print(std_MAIN_PROCESS_NAME + "Please Prepare 'HLA_DICTIONARY_SNPS.map' (included with this package) in '{0}'\n".format(os.path.dirname(_dictionary_SNPS_map)))
-        sys.exit()
-
-    if not os.path.exists(_dictionary_SNPS_seq):
-        print(std_MAIN_PROCESS_NAME + "Please Prepare 'HLA_DICTIONARY_SNPS.txt' (included with this package) in '{0}'\n".format(os.path.dirname(_dictionary_SNPS_seq)))
-        sys.exit()
-
-
-    ### Source Code Scripts
-
-    # New version with Python.
-
-    if not os.path.exists(os.path.join(p_src, "HLAtoSequences.py")):
-        print(std_MAIN_PROCESS_NAME + "Error. 'HLAtoSequences.py' not found in '{0}'".format(p_src))
-        sys.exit()
-    else:
-        from src.HLAtoSequences import HLAtoSequences
-
-    if not os.path.exists(os.path.join(p_src, "encodeVariants.py")):
-        print(std_MAIN_PROCESS_NAME + "Error. 'encodeVariants.py' not found in '{0}'".format(p_src))
-        sys.exit()
-    else:
-        from src.encodeVariants import encodeVariants
-
-    if not os.path.exists(os.path.join(p_src, "encodeHLA.py")):
-        print(std_MAIN_PROCESS_NAME + "Error. 'encodeHLA.py' not found in '{0}'".format(p_src))
-        sys.exit()
-    else:
-        from src.encodeHLA import encodeHLA
-
-
-
 
     ########## < Core Variables 2 > ##########
+
+    ### Flag for plain SNP markers.
+    f_plain_SNP = bool(_variants)
 
     # Input 1 : HLA type data
     HLA_DATA = _CHPED
@@ -207,8 +114,8 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
     SNPS_CODED = OUTPUT + '.SNPS.CODED'
 
     plink = ' '.join([_p_plink, "--noweb", "--silent"])
-    beagle = ' '.join(["java", "-Xmx4000m", "-jar", _p_beagle])
-    linkage2beagle = ' '.join(["java", "-Xmx2000m", "-jar", _p_linkage2beagle])
+    beagle = ' '.join(["java", "-Xmx{}".format(_mem), "-jar", _p_beagle])
+    linkage2beagle = ' '.join(["java", "-Xmx{}".format(_mem), "-jar", _p_linkage2beagle])
 
 
 
@@ -322,7 +229,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
             
         """
 
-        if not __save_intermediates:
+        if not f_save_intermediates:
 
             os.system("rm " + (OUTPUT + ".AA.{ped,map}"))
             os.system("rm " + (OUTPUT + ".AA.TMP.*"))
@@ -359,7 +266,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
             - *.HLA.{ped,map}
         """
 
-        if not __save_intermediates:
+        if not f_save_intermediates:
             os.system("rm " + (OUTPUT + ".HLA.{ped,map}"))
 
 
@@ -430,7 +337,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
                     
         """
 
-        if not __save_intermediates:
+        if not f_save_intermediates:
 
             os.system("rm " + (OUTPUT + ".SNPS.{ped,map}"))
             os.system("rm " + (OUTPUT + ".SNPS.TMP.*"))
@@ -875,7 +782,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
             os.system(command)
 
 
-            if not __save_intermediates:
+            if not f_save_intermediates:
 
                 os.system("rm " + OUTPUT+".HLA.{bed,bim,fam,log}")
                 os.system("rm " + OUTPUT+".SNPS.CODED.{bed,bim,fam,log}")
@@ -927,7 +834,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
 
 
 
-            if not __save_intermediates:
+            if not f_save_intermediates:
 
                 os.system("rm " + __AA__+".{bed,bim,fam,log}")
                 os.system("rm " + __SNPS__+".{bed,bim,fam,log}")
@@ -978,7 +885,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
             os.system(command)
 
 
-            if not __save_intermediates:
+            if not f_save_intermediates:
                 os.system("rm " + __MERGED__+".{bed,bim,fam,log,refallele}")
 
 
@@ -1136,13 +1043,16 @@ if __name__ == "__main__":
 
     parser.add_argument("--variants", help="\nInput variants data file(.bed/.bim/.fam)\n\n")
     parser.add_argument("--chped", help="\nHLA Type Data(.chped)\n\n", required=True)
-    parser.add_argument("-hg", help="\nHuman Genome version(ex. 18, 19)\n\n", choices=["18", "19", "38"], metavar="hg", default="19")
+    parser.add_argument("--hg", help="\nHuman Genome version(ex. 18, 19)\n\n", choices=["18", "19", "38"], metavar="hg", default="19")
     parser.add_argument("--out", "-o", help="\nOutput file prefix\n\n", required=True)
 
     parser.add_argument("--dict-AA", help="\nPrefix of AA HLA Dictionary file(*.txt, *.map).\n\n", required=True)
     parser.add_argument("--dict-SNPS", help="\nPrefix of SNP HLA Dictionary file(*.txt, *.map).\n\n", required=True)
 
     parser.add_argument("--save-intermediates", help="\nDon't remove intermediate files.\n\n", action='store_true')
+    parser.add_argument("--phasing", help="\nPerform phasing with Beagle4.1.\n\n", action='store_true')
+    parser.add_argument("--mem", help="\nJava Memory requried for Bealge4.1. (ex. 2g)\n\n", default="2g")
+    parser.add_argument("--dependency", help="\nSpecify a folder for external software.\n\n", default='dependency/')
 
 
 
@@ -1164,6 +1074,6 @@ if __name__ == "__main__":
 
 
     # Implementing Main Function.
-    bMarkerGenerator(_CHPED=args.chped, _OUT=args.out, _hg=args.hg, _variants=args.variants,
-                     _dictionary_AA=args.dict_AA, _dictionary_SNPS=args.dict_SNPS,
-                     __save_intermediates=args.save_intermediates)
+    bMarkerGenerator(_CHPED=args.chped, _OUT=args.out, _hg=args.hg, _dictionary_AA=args.dict_AA,
+                     _dictionary_SNPS=args.dict_SNPS, _variants=args.variants, _mem=args.mem,
+                     f_save_intermediates=args.save_intermediates, f_phasing=args.phasing)
