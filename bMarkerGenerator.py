@@ -7,7 +7,8 @@ from src.HLAtoSequences import HLAtoSequences
 from src.encodeVariants import encodeVariants
 from src.encodeHLA import encodeHLA
 
-
+from src.ATtrick import ATtrick
+from src.redefineBPv1BH import redefineBP
 
 ########## < Core Global Variables > ##########
 
@@ -130,7 +131,7 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
     MERGE = 1
     QC = 1
 
-    PREPARE = 0
+    PREPARE = 1
     PHASE = 0
     CLEANUP = 0
 
@@ -650,68 +651,92 @@ def bMarkerGenerator(_CHPED, _OUT, _hg, _dictionary_AA, _dictionary_SNPS, _varia
 
 
 
-        # if PREPARE:
-        #
-        #     print("[{}] Preparing files for Beagle.".format(index))
-        #
-        #     """
-        #     [Source from Buhm Han.]
-        #
-        #     awk '{print $2 " " $4 " " $5 " " $6}' $OUTPUT.bim > $OUTPUT.markers
-        #     plink --bfile $OUTPUT --keep-allele-order --recode --alleleACGT --out $OUTPUT
-        #     awk '{print "M " $2}' $OUTPUT.map > $OUTPUT.dat
-        #     cut -d ' ' -f1-5,7- $OUTPUT.ped > $OUTPUT.nopheno.ped
-        #
-        #     echo "[$i] Converting to beagle format.";  @ i++
-        #     linkage2beagle pedigree=$OUTPUT.nopheno.ped data=$OUTPUT.dat beagle=$OUTPUT.bgl standard=true > $OUTPUT.bgl.log
-        #
-        #
-        #     [Source from Yang.]
-        #
-        #     awk '{print $2 " " $4 " " $5 " " $6}' $OUTPUT.bim > $OUTPUT.markers
-        #     plink --bfile $OUTPUT --keep-allele-order --recode --alleleACGT --out $OUTPUT
-        #     plink --bfile $OUTPUT --recode --transpose --out $OUTPUT
-        #     # awk '{print "M " $2}' $OUTPUT.map > $OUTPUT.dat
-        #     # cut -d ' ' -f1-5,7- $OUTPUT.ped > $OUTPUT.nopheno.ped
-        #
-        #     echo "[$i] Converting to beagle format.";  @ i++
-        #     beagle2vcf -fnmarker $OUTPUT.markers -fnfam $OUTPUT.fam -fngtype $OUTPUT.tped -fnout $OUTPUT.vcf
-        #
-        #     I will make this code block based on source given by Yang. for now.
-        #
-        #     """
-        #
-        #
-        #     command = ' '.join(
-        #         ["awk", '\'{print $2 " " $4 " " $5 " " $6}\'', OUTPUT + '.bim', ">", OUTPUT + '.markers'])
-        #     print(command)
-        #     os.system(command)
-        #
-        #     command = ' '.join(
-        #         [plink, "--bfile", OUTPUT, "--keep-allele-order", "--recode", "--alleleACGT", "--out", OUTPUT])
-        #     print(command)
-        #     os.system(command)
-        #
-        #     command = ' '.join(["awk", '\'{print "M " $2}\'', OUTPUT + '.map', ">", OUTPUT + '.dat'])
-        #     print(command)
-        #     os.system(command)
-        #
-        #     command = ' '.join(["cut -d ' ' -f1-5,7-", OUTPUT + '.ped', ">", OUTPUT + '.nopheno.ped'])
-        #     print(command)
-        #     os.system(command)
-        #
-        #     index += 1
-        #
-        #     print("[{}] Converting to beagle format.".format(index))
-        #
-        #     command = ' '.join([linkage2beagle, "pedigree=" + OUTPUT + '.nopheno.ped', "data=" + OUTPUT + '.dat',
-        #                         "beagle=" + OUTPUT + '.bgl', "standard=true", ">", OUTPUT + '.bgl.log'])
-        #     print(command)
-        #     os.system(command)
-        #
-        #     index += 1
-        #
-        #
+        if PREPARE:
+
+            print("[{}] Preparing files for Beagle.".format(index))
+
+            """
+            [Source from Buhm Han.]
+
+            awk '{print $2 " " $4 " " $5 " " $6}' $OUTPUT.bim > $OUTPUT.markers
+            plink --bfile $OUTPUT --keep-allele-order --recode --alleleACGT --out $OUTPUT
+            awk '{print "M " $2}' $OUTPUT.map > $OUTPUT.dat
+            cut -d ' ' -f1-5,7- $OUTPUT.ped > $OUTPUT.nopheno.ped
+
+            echo "[$i] Converting to beagle format.";  @ i++
+            linkage2beagle pedigree=$OUTPUT.nopheno.ped data=$OUTPUT.dat beagle=$OUTPUT.bgl standard=true > $OUTPUT.bgl.log
+
+
+            [Source from Yang.]
+
+            awk '{print $2 " " $4 " " $5 " " $6}' $OUTPUT.bim > $OUTPUT.markers
+            plink --bfile $OUTPUT --keep-allele-order --recode --alleleACGT --out $OUTPUT
+            plink --bfile $OUTPUT --recode --transpose --out $OUTPUT
+            # awk '{print "M " $2}' $OUTPUT.map > $OUTPUT.dat
+            # cut -d ' ' -f1-5,7- $OUTPUT.ped > $OUTPUT.nopheno.ped
+
+            echo "[$i] Converting to beagle format.";  @ i++
+            beagle2vcf -fnmarker $OUTPUT.markers -fnfam $OUTPUT.fam -fngtype $OUTPUT.tped -fnout $OUTPUT.vcf
+
+            I will make this code block based on source given by Yang. for now.
+
+            """
+
+            # ATtrick : 'P' to 'T', 'A' to 'A'
+            [bim_ATtrick, a1_allele_ATtrick] = ATtrick(OUTPUT + '.bim', OUTPUT)
+
+
+            # command = ' '.join(["awk", '\'{print $2" "$4" "$5" "$6}\'', OUTPUT + '.bim', ">", OUTPUT + '.markers'])
+            command = ' '.join(["awk", '\'{print $2" "$4" "$6" "$5}\'', bim_ATtrick, ">", OUTPUT + '.ATtrick.markers'])
+            # print(command)
+            os.system(command)
+            """
+            Plink works by setting ALT allele as a1-allele, which is the 5th column of bim file.
+            However, VCF file sets a2-allele, which is the 6th column of plink bim file, as ALT allele.
+            
+            beagle2vcf converts 4th column of *.markers file to ALT allele of newly generated vcf file.
+            That's why I reordered ($5, $6) to ($6, $5).
+            """
+
+            # Manipulate duplicated Base poistion
+            redefined_markers = redefineBP(OUTPUT + '.ATtrick.markers', OUTPUT + '.ATtrick.redefined.markers')
+
+            # Applying the above manipulated base position information.
+            # command = [
+            #     "paste <(cut -f1-3 %s) <(awk '{print $2}' %s) <(cut -f5- %s) > %s" % (bim_ATtrick, redefined_markers, bim_ATtrick, OUTPUT+'.ATtrick.redefined.bim')
+            # ]
+            # print(command)
+            # # os.system(command)
+            # subprocess.call(command)
+
+            command = ' '.join(
+                [plink, "--bed", OUTPUT+'.bed', "--bim", bim_ATtrick, "--fam", OUTPUT+'.fam',
+                 "--keep-allele-order", "--recode", "--alleleACGT", "--out", OUTPUT+'.ATtrick',
+                 "--a1-allele", a1_allele_ATtrick])
+            # print(command)
+            os.system(command)
+
+            command = ' '.join(["awk", '\'{print "M " $2}\'', OUTPUT + '.ATtrick.map', ">", OUTPUT + '.ATtrick.dat'])
+            # print(command)
+            os.system(command)
+
+            command = ' '.join(["cut -d ' ' -f1-5,7-", OUTPUT + '.ATtrick.ped', ">", OUTPUT + '.ATtrick.nopheno.ped'])
+            # print(command)
+            os.system(command)
+
+            index += 1
+
+            print("[{}] Converting to beagle format.".format(index))
+
+            command = ' '.join([linkage2beagle, "pedigree=" + OUTPUT + '.ATtrick.nopheno.ped', "data=" + OUTPUT + '.ATtrick.dat',
+                                "beagle=" + OUTPUT + '.ATtrick.bgl', "standard=true", ">", OUTPUT + '.ATtrick.bgl.log'])
+            print(command)
+            os.system(command)
+
+            index += 1
+
+
+
         # if PHASE:
         #
         #     print("[{}] Phasing reference using Beagle (see progress in $OUTPUT.bgl.log).".format(index))
